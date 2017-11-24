@@ -1,38 +1,13 @@
 <template>
   <div id="app">
     <div>
-      <welcome v-if="!appHandle" />
-      <router-view v-else/>
+      <router-view />
     </div>
   </div>
 </template>
 <script>
-import Welcome from '@/components/Welcome.vue'
-// import CreateWallet from '@/components/CreateWallet'
 export default {
-  name: 'app',
-  components: {
-    'welcome': Welcome
-    // 'create-wallet': CreateWallet
-  },
-  mounted: function () {
-    this.$nextTick(async function () {
-      const { dispatch, state: { appHandle, authUri } } = this.$store
-      if (!appHandle || !authUri) {
-        await dispatch('init')
-      }
-      // if (!walletList) {
-      //   dispatch('getWallets')
-      // }
-    })
-  },
-  computed: {
-    appHandle () {
-      return this.$store.state.appHandle
-    }
-  },
-  methods: {
-  }
+  name: 'app'
 }
 </script>
 

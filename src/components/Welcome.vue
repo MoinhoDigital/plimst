@@ -11,20 +11,26 @@
 </template>
 
 <script>
+import router from '../router'
 import Loader from '@/components/Loader'
 export default {
   name: 'Welcome',
   components: {
     'loader': Loader
+  },
+  mounted: async function () {
+    const { dispatch, state: { appHandle, authUri } } = this.$store
+    if (!appHandle || !authUri) {
+      await dispatch('init')
+      router.push('/auth')
+    }
   }
+
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-img {
-  padding-bottom: 15px;
-}
 .loader {
   width: 35px;
   height: auto;

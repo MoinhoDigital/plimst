@@ -118,11 +118,14 @@ export default new Vuex.Store({
   actions: {
     async init ({ commit }) {
       const { appHandle, authUri } = await init(appInfo, perms, true)
+      const pubK = await getPublicNames(appHandle)
+      console.log('pubNames', pubK)
       commit('init', { appHandle, authUri })
     },
+    async createPublicName ({ commit }, input) {
+      console.log('Wow', input)
+    },
     async getWallets ({ commit, state }) {
-      const pubK = await getPublicNames(state.appHandle)
-      console.log('pubNames', pubK)
       const walletList = await get(state.appHandle, idsInfo.key, idsInfo.tagType)
       commit('setWalletList', walletList)
     },

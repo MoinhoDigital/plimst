@@ -5195,6 +5195,10 @@ vue@^2.5.3:
   version "2.5.6"
   resolved "https://registry.yarnpkg.com/vue/-/vue-2.5.6.tgz#73654fefa4b37f25dfc657b8b834b44c90822cd7"
 
+vuelidate@^0.6.1:
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/vuelidate/-/vuelidate-0.6.1.tgz#c52c9fd2b48f974613485e2cf51c182e84bcf747"
+
 vuex@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/vuex/-/vuex-3.0.0.tgz#98b4b5c4954b1c1c1f5b29fa0476a23580315814"
