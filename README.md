@@ -1,10 +1,10 @@
-![](https://github.com/MoinhoDigital/safewallet/blob/master/safewallet_banner.png)
+![](https://github.com/MoinhoDigital/plimst/blob/master/static/logo.png)
 
 ## Usage
 
 ```sh
-git clone https://github.com/moinhodigital/safewallet.git
-cd safewallet
+git clone https://github.com/moinhodigital/plimst.git
+cd plimst
 yarn
 ```
 
