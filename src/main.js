@@ -19,12 +19,10 @@ Vue.use(MdDialog)
 Vue.use(MdList)
 
 router.beforeEach((to, from, next) => {
-  console.log('FROM', from)
-  console.log('To', to)
-  console.log('Store', store)
   if (to.path !== '/' && !store.state.handles.appHandle) {
     router.push('/')
   }
+  next()
 })
 /* eslint-disable no-new */
 new Vue({

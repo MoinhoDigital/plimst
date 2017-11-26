@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import {
-  init, get, insert, update, getPublicNames,
+  init, get, insert, update, getPublicNames, createPublicName,
   mintCoin, sendTxNotif, loadWalletData, storeCoinsToWallet, readTxInboxData, createWallet, createTxInbox, transferCoin
 } from './websafe'
 // import safeCoins from 'safe-coins-wallet'
@@ -51,6 +51,8 @@ export default new Vuex.Store({
       authUri: null
     },
     data: {
+      publicNames: null,
+      id: null,
       inboxData: [],
       walletList: null,
       coins: [],
@@ -60,7 +62,7 @@ export default new Vuex.Store({
     modals: {
       createWallet: false
     },
-    input: {
+    inputs: {
       walletInput: 'Satoshi Nakamoto',
       assetForm: { asset: 'BTC', quantity: 3 },
       transferForm: { receiver: 'Satoshi Nakamoto', quantity: 3 }
@@ -69,20 +71,26 @@ export default new Vuex.Store({
   mutations: {
     init: (state, payload) => {
       const { appHandle, authUri } = payload
-      state.authUri = authUri
-      state.appHandle = appHandle
+      state.handles.authUri = authUri
+      state.handles.appHandle = appHandle
+    },
+    setPublicNames: (state, payload) => {
+      state.data.publicNames = payload
+    },
+    setId: (state, payload) => {
+      state.data.id = payload
     },
     coins: (state, payload) => {
-      state.coins = payload
+      state.data.coins = payload
     },
     updateWalletInput: (state, payload) => {
-      state.input.walletInput = payload
+      state.inputs.walletInput = payload
     },
     assetForm: (state, payload) => {
-      state.input.assetForm = payload
+      state.inputs.assetForm = payload
     },
     transferForm: (state, payload) => {
-      state.input.assetForm = payload
+      state.inputs.assetForm = payload
     },
     newWalletModal: (state, payload) => {
       console.log('modal', state)
@@ -97,33 +105,73 @@ export default new Vuex.Store({
       })
       console.log('walletList', walletList)
       // const sortedList = walletList.sort((a, b) => walletList.lastUpdate[a] - walletList.lastUpdate[b])
-      state.walletList = walletList
+      state.data.walletList = walletList
     },
     setWallet: (state, payload) => {
-      state.wallet = payload
+      state.data.wallet = payload
     },
     setPk: (state, payload) => {
-      state.pk = payload
+      state.data.pk = payload
     },
     setInbox: (state, payload) => {
-      state.inbox = payload
+      state.data.inbox = payload
     },
     inboxData: (state, payload) => {
-      state.inboxData = payload
+      state.data.inboxData = payload
     },
     updateWalletIds: (state, payload) => {
-      payload.map(wallet => state.walletIds.push(wallet))
+      payload.map(wallet => state.data.walletIds.push(wallet))
     }
   },
   actions: {
     async init ({ commit }) {
       const { appHandle, authUri } = await init(appInfo, perms, true)
-      const pubK = await getPublicNames(appHandle)
-      console.log('pubNames', pubK)
       commit('init', { appHandle, authUri })
     },
-    async createPublicName ({ commit }, input) {
-      console.log('Wow', input)
+    async getPublicNames ({ commit, state }) {
+      const publicNames = await getPublicNames(state.handles.appHandle)
+      console.log('pubNames', publicNames)
+      commit('setPublicNames', publicNames)
+    },
+    async createPublicName ({ commit, state, dispatch }, input) {
+      const success = await createPublicName(state.handles.appHandle, input)
+      if (success) {
+        dispatch('getPublicNames')
+      }
+    },
+    async createWallet ({ commit, state }, id) {
+      const { appHandle } = state.handles
+      try {
+        const wallet = await createWallet(appHandle, id, walletInfo)
+        const inbox = await createTxInbox(appHandle, id, inboxInfo)
+        let rawData = {
+          wallet,
+          pk: inbox.pk,
+          sk: inbox.sk,
+          lastUpdate: new Date().toUTCString()
+        }
+        const serialisedData = JSON.stringify(rawData)
+        const saveWallet = await insert(appHandle, idsInfo, { [id]: serialisedData })
+        if (saveWallet) {
+          const walletList = await get(appHandle, idsInfo.key, idsInfo.tagType)
+          const coinIds = await loadWalletData(appHandle, wallet, walletInfo.key)
+          console.log('coinIds', coinIds)
+          rawData.id = id
+          commit('setWallet', rawData)
+          commit('setWalletList', walletList)
+        }
+      } catch (err) {
+        console.log('Error creating wallet: ', err)
+      }
+    },
+    async selectId ({ commit, state, dispatch }, id) {
+      const { appHandle } = state.handles
+      const wallet = await get(appHandle, idsInfo.key, idsInfo.tagType, id)
+      if (wallet.length > 0) {
+        console.log(wallet)
+      } else {
+        await dispatch('createWallet', id)
+      }
     },
     async getWallets ({ commit, state }) {
       const walletList = await get(state.appHandle, idsInfo.key, idsInfo.tagType)
@@ -167,30 +215,6 @@ export default new Vuex.Store({
     },
     async newWallet ({ commit, state }) {
       commit('newWalletModal')
-    },
-    async createWallet ({ commit, state }, input) {
-      try {
-        const wallet = await createWallet(state.appHandle, input, walletInfo)
-        const inbox = await createTxInbox(state.appHandle, input, inboxInfo)
-        let rawData = {
-          wallet,
-          pk: inbox.pk,
-          sk: inbox.sk,
-          lastUpdate: new Date().toUTCString()
-        }
-        const serialisedData = JSON.stringify(rawData)
-        const saveWallet = await insert(state.appHandle, idsInfo, { [input]: serialisedData })
-        if (saveWallet) {
-          const walletList = await get(state.appHandle, idsInfo.key, idsInfo.tagType)
-          const coinIds = await loadWalletData(state.appHandle, wallet, walletInfo.key)
-          console.log('coinIds', coinIds)
-          rawData.id = input
-          commit('setWallet', rawData)
-          commit('setWalletList', walletList)
-        }
-      } catch (err) {
-        console.log('Error creating wallet: ', err)
-      }
     },
     async createAsset ({ commit, state }, formData) {
       const { asset, quantity } = formData

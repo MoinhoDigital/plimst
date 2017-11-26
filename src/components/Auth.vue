@@ -6,10 +6,14 @@
           <md-card-header>
             <md-card-header-text>
               <div class="md-title">Authentication</div>
-              <div class="md-subhead">You don't seem to have a public id yet. Please create a new one.</div>
+              <div class="" v-if="!publicNames">Loading...</div>
+              <div class="md-subhead" v-if="isEmpty">You don't seem to have a public id yet. Please create a new one.</div>
             </md-card-header-text>
           </md-card-header>
           <md-card-content>
+            <div v-for="name in publicNames">
+              <md-button @click="selectId(name)" md-primary>{{ name }}</md-button>
+            </div>
             <md-field :class="getValidationClass('publicName')">
               <label for="public-name">Public Name</label>
               <md-input name="public-name" id="public-name" v-model="form.publicName" :disabled="form.sending" />
@@ -18,7 +22,7 @@
             </md-field>
           </md-card-content>
           <md-card-actions>
-            <md-button :click="createPublicName">Create</md-button>
+            <md-button @click="createPublicName()">Create</md-button>
           </md-card-actions>
         </md-card>
       </div>
@@ -31,10 +35,15 @@ import {
   required,
   minLength
 } from 'vuelidate/lib/validators'
+import router from '../router'
 
 export default {
   name: 'Auth',
   mixins: [validationMixin],
+  mounted: async function () {
+    const { dispatch } = this.$store
+    await dispatch('getPublicNames')
+  },
   data: () => ({
     form: {
       publicName: null,
@@ -47,6 +56,15 @@ export default {
         required,
         minLength: minLength(3)
       }
+    }
+  },
+  computed: {
+    isEmpty () {
+      const { publicNames } = this.$store.state.data
+      return (publicNames && publicNames.length < 1)
+    },
+    publicNames () {
+      return this.$store.state.data.publicNames
     }
   },
   methods: {
@@ -64,6 +82,9 @@ export default {
     },
     createPublicName () {
       this.$store.dispatch('createPublicName', this.form.publicName)
+    },
+    selectId (id) {
+      router.push(id)
     }
   }
 }
