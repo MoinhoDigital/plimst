@@ -1,9 +1,9 @@
 <template>
-  <div>
+  <div class="wrapper">
     <h1>Transactions</h1>
     <div class="box" v-for="inbox in inboxes" :key="inbox.id">
       <div class="item">
-        {{inbox.name}}
+        {{inbox.asset}}
       </div>
       <div class="item">
         {{inbox.coinIds.length}}
@@ -20,18 +20,23 @@ export default {
   name: 'transactions',
   computed: {
     inboxes () {
-      return this.$store.state.inboxData
+      return this.$store.state.data.inboxData
     }
   }
 }
 </script>
 
 <style>
+  .wrapper {
+    background: #fff;
+    color: #000;
+  }
   .box {
     width: 100%;
     display: flex;
   }
   .item {
+    width: 30%;
   }
   .sent {
     color: red;

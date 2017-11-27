@@ -17,8 +17,9 @@
             <md-field :class="getValidationClass('publicName')">
               <label for="public-name">Public Name</label>
               <md-input name="public-name" id="public-name" v-model="form.publicName" :disabled="form.sending" />
-              <span class="md-error" v-if="!$v.form.publicName.required">The last name is required</span>
-              <span class="md-error" v-else-if="!$v.form.publicName.minlength">Invalid last name</span>
+              <span class="md-error" v-if="form.errorMessage">{{ form.errorMessage }}</span>
+              <span class="md-error" v-if="!$v.form.publicName.required">A name is required</span>
+              <span class="md-error" v-else-if="!$v.form.publicName.minlength">At least 3 characters</span>
             </md-field>
           </md-card-content>
           <md-card-actions>
@@ -47,7 +48,8 @@ export default {
   data: () => ({
     form: {
       publicName: null,
-      sending: false
+      sending: false,
+      errorMessage: null
     }
   }),
   validations: {
@@ -80,8 +82,16 @@ export default {
       this.$v.$reset()
       this.form.publicName = null
     },
-    createPublicName () {
-      this.$store.dispatch('createPublicName', this.form.publicName)
+    async createPublicName () {
+      const id = this.form.publicName
+      const dispatch = await this.$store.dispatch('createPublicName', id)
+      if (dispatch.success) {
+        router.push(id)
+      } else if (dispatch.error) {
+        console.log(dispatch.error)
+        this.form.errorMessage = dispatch.error
+        console.log(this.form.errorMessage)
+      }
     },
     selectId (id) {
       router.push(id)
@@ -92,8 +102,11 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.wrapper {
-  background: #fff;
-  color: #000;
-}
+  .wrapper {
+    background: #fff;
+    color: #000;
+  }
+  .md-error {
+    color: red;
+  }
 </style>

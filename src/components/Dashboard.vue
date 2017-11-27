@@ -27,7 +27,7 @@ export default {
   },
   computed: {
     wallet () {
-      return this.$store.state.wallet
+      return this.$store.state.data.wallet
     }
   }
 }

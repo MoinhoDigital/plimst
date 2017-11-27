@@ -1,13 +1,13 @@
 <template>
-  <div>
-    <div>
+  <div class="wrapper">
+    <div class="container">
       <md-card class="card hero">
         <md-card-header>
           <div class="md-title">Create a new asset</div>
         </md-card-header>
         <md-card-content>
           <div>
-            <h4>Current wallet ID: {{ pk }}</h4>
+            <h4>Current wallet ID: {{ id }}</h4>
             <md-field>
               <label>Asset Name:</label>
               <md-input v-model="assetForm.asset"></md-input>
@@ -27,12 +27,12 @@
 export default {
   name: 'create-asset',
   computed: {
-    pk () {
-      return this.$store.state.pk
+    id () {
+      return this.$store.state.data.wallet.id
     },
     assetForm: {
       get () {
-        return this.$store.state.input.assetForm
+        return this.$store.state.inputs.assetForm
       },
       set (value) {
         this.$store.commit('assetForm', value)
@@ -48,9 +48,9 @@ export default {
 </script>
 
 <style scoped>
-  .box {
-    width: 100%;
-    display: flex;
+  .container {
+    background: #fff;
+    color: #000;
   }
   .item {
     width: 30%;
