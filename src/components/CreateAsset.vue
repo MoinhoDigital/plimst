@@ -1,24 +1,15 @@
 <template>
   <div class="wrapper">
     <div class="container">
-      <md-card class="card hero">
-        <md-card-header>
-          <div class="md-title">Create a new asset</div>
-        </md-card-header>
-        <md-card-content>
-          <div>
-            <h4>Current wallet ID: {{ id }}</h4>
-            <md-field>
-              <label>Asset Name:</label>
-              <md-input v-model="assetForm.asset"></md-input>
-              <md-input v-model="assetForm.quantity"></md-input>
-            </md-field>
-          </div>
-        </md-card-content>
-        <md-card-actions>
-          <md-button @click="createAsset(assetForm)">Create Asset</md-button>
-        </md-card-actions>
-      </md-card>
+      <h2 class="md-title">Create a new asset</h2>
+      <md-field>
+        <label>Asset Name:</label>
+        <md-input class="input" v-model="assetForm.asset"></md-input>
+      </md-field>
+      <md-field>
+        <label>Quantity:</label>
+        <md-input class="input" v-model="assetForm.quantity"></md-input>
+      </md-field>
     </div>
   </div>
 </template>

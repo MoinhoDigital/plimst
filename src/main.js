@@ -19,8 +19,8 @@ Vue.use(MdDialog)
 Vue.use(MdList)
 
 router.beforeEach((to, from, next) => {
-  if (to.path !== '/' && !store.state.handles.appHandle) {
-    router.push('/')
+  if (to.path !== '/welcome' && !store.state.handles.appHandle) {
+    router.push('/welcome')
   }
   next()
 })

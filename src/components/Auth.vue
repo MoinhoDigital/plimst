@@ -1,32 +1,27 @@
 <!-- PROPERTY OF PLIMST -->
 <template>
-  <div class="wrapper">
-      <div class="container">
-        <md-card>
-          <md-card-header>
-            <md-card-header-text>
-              <div class="md-title">Authentication</div>
-              <div class="" v-if="!publicNames">Loading...</div>
-              <div class="md-subhead" v-if="isEmpty">You don't seem to have a public id yet. Please create a new one.</div>
-            </md-card-header-text>
-          </md-card-header>
-          <md-card-content>
-            <div v-for="name in publicNames">
-              <md-button @click="selectId(name)" md-primary>{{ name }}</md-button>
-            </div>
-            <md-field :class="getValidationClass('publicName')">
-              <label for="public-name">Public Name</label>
-              <md-input name="public-name" id="public-name" v-model="form.publicName" :disabled="form.sending" />
-              <span class="md-error" v-if="form.errorMessage">{{ form.errorMessage }}</span>
-              <span class="md-error" v-if="!$v.form.publicName.required">A name is required</span>
-              <span class="md-error" v-else-if="!$v.form.publicName.minlength">At least 3 characters</span>
-            </md-field>
-          </md-card-content>
-          <md-card-actions>
-            <md-button @click="createPublicName()">Create</md-button>
-          </md-card-actions>
-        </md-card>
-      </div>
+  <div>
+    <loader v-if="!publicNames" />
+    <div class="md-subhead" v-if="isEmpty">
+      You don't seem to have a public id yet. Please create a new one.
+    </div>
+    <h2 class="md-title" v-if="!isEmpty">Select an ID</h2>
+    <div class="namelist" v-for="name in publicNames">
+      <md-button class="md-raised md-accent" :to="{ name: 'Dashboard', params: { id: name }}">
+        {{ name }}
+      </md-button>
+    </div>
+    <div v-if="!isEmpty">
+      <div class="md-subhead">or</div>
+      <div class="md-subhead">Create a new public name</div>
+    </div>
+    <md-field :class="getValidationClass('publicName')">
+      <label for="public-name">Public Name</label>
+      <md-input name="public-name" id="public-name" v-model="form.publicName" :disabled="form.sending" />
+      <span class="md-error">error</span>
+      <span class="md-error" v-if="!$v.form.publicName.required">A name is required</span>
+      <span class="md-error" v-else-if="!$v.form.publicName.minlength">At least 3 characters</span>
+    </md-field>
   </div>
 </template>
 
@@ -37,10 +32,14 @@ import {
   minLength
 } from 'vuelidate/lib/validators'
 import router from '../router'
+import Loader from './Loader.vue'
 
 export default {
   name: 'Auth',
   mixins: [validationMixin],
+  components: {
+    'loader': Loader
+  },
   mounted: async function () {
     const { dispatch } = this.$store
     await dispatch('getPublicNames')
@@ -92,9 +91,6 @@ export default {
         this.form.errorMessage = dispatch.error
         console.log(this.form.errorMessage)
       }
-    },
-    selectId (id) {
-      router.push(id)
     }
   }
 }
@@ -102,9 +98,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-  .wrapper {
-    background: #fff;
-    color: #000;
+  .namelist {
+    padding: 30px 0;
   }
   .md-error {
     color: red;

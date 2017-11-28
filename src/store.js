@@ -212,9 +212,8 @@ export default new Vuex.Store({
       }
       dispatch('selectWallet', id)
     },
-    async createAsset ({ commit, state }, formData) {
-      const { asset, quantity } = formData
-      const { handles: { appHandle }, data: { wallet, coins } } = state
+    async createAsset ({ commit, state }) {
+      const { handles: { appHandle }, data: { wallet, coins }, inputs: { assetForm: { asset, quantity } } } = state
       let mintedCoins = []
       async function mintCoins (privateKey, amount) {
         if (amount < 1 || privateKey.length < 1) {
