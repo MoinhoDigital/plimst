@@ -1,5 +1,6 @@
 <template>
-  <router-view></router-view>
+  <loader v-if="!wallet" />
+  <router-view v-else="wallet"></router-view>
 </template>
 
 <script>

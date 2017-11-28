@@ -5,6 +5,7 @@ import {
   mintCoin, sendTxNotif, loadWalletData, storeCoinsToWallet, readTxInboxData, createWallet, createTxInbox, transferCoin
 } from './websafe'
 // import safeCoins from 'safe-coins-wallet'
+import router from './router'
 
 const coinTagType = 21082018
 const inboxTagType = 20082018
@@ -60,7 +61,7 @@ export default new Vuex.Store({
     modals: {
     },
     inputs: {
-      walletInput: 'Satoshi Nakamoto',
+      authForm: 'Satoshi Nakamoto',
       assetForm: { asset: 'BTC', quantity: 3 },
       transferForm: { receiver: 'Satoshi Nakamoto', quantity: 3 }
     }
@@ -80,8 +81,8 @@ export default new Vuex.Store({
     coins: (state, payload) => {
       state.data.coins = payload
     },
-    updateWalletInput: (state, payload) => {
-      state.inputs.walletInput = payload
+    authForm: (state, payload) => {
+      state.inputs.authForm = payload
     },
     assetForm: (state, payload) => {
       state.inputs.assetForm = payload
@@ -124,11 +125,12 @@ export default new Vuex.Store({
       const publicNames = await getPublicNames(state.handles.appHandle)
       commit('setPublicNames', publicNames)
     },
-    async createPublicName ({ commit, state, dispatch }, input) {
-      const request = await createPublicName(state.handles.appHandle, input)
+    async createPublicName ({ commit, state, dispatch }) {
+      const { handles: { appHandle }, inputs: { authForm } } = state
+      const request = await createPublicName(appHandle, authForm)
       if (request.success) {
         await dispatch('getPublicNames')
-        return { success: true }
+        router.push(state.inputs.authForm)
       } else {
         return { error: request.error }
       }
@@ -164,6 +166,7 @@ export default new Vuex.Store({
       try {
         await Promise.all(walletList
           .filter((wallet) => {
+            console.log('wallet', wallet.id, id)
             return wallet.id === id
           })
           .map((selected) => {
@@ -202,15 +205,15 @@ export default new Vuex.Store({
         console.log('Error selecting wallet', err)
       }
     },
-    async selectId ({ commit, state, dispatch }, id) {
-      let { handles: { appHandle } } = state
+    async selectId ({ commit, state, dispatch }) {
+      const { handles: { appHandle }, inputs: { authForm } } = state
       const rawWalletList = await get(appHandle, idsInfo.key, idsInfo.tagType)
       commit('setWalletList', rawWalletList)
-      const wallet = state.data.walletList.findIndex(wallet => wallet.id === id)
+      const wallet = state.data.walletList.findIndex(wallet => wallet.id === authForm)
       if (wallet === -1) {
-        await dispatch('createWallet', id)
+        await dispatch('createWallet', authForm)
       }
-      dispatch('selectWallet', id)
+      dispatch('selectWallet', authForm)
     },
     async createAsset ({ commit, state }) {
       const { handles: { appHandle }, data: { wallet, coins }, inputs: { assetForm: { asset, quantity } } } = state
@@ -238,8 +241,9 @@ export default new Vuex.Store({
       inboxInfo.encSk = wallet.sk
       const inboxData = await readTxInboxData(appHandle, wallet.id, inboxInfo)
       const updatedCoins = await loadWalletData(appHandle, wallet.serialised, walletInfo.key)
-      commit('inboxData', inboxData)
-      commit('coins', updatedCoins)
+      await commit('inboxData', inboxData)
+      await commit('coins', updatedCoins)
+      router.push(`/${wallet.id}/send`)
     },
     async transferAssets ({ commit, state }, { form, asset }) {
       const { quantity, receiver } = form

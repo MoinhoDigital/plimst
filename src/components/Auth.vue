@@ -16,8 +16,8 @@
       <div class="md-subhead">Create a new public name</div>
     </div>
     <md-field :class="getValidationClass('publicName')">
-      <label for="public-name">Public Name</label>
-      <md-input name="public-name" id="public-name" v-model="form.publicName" :disabled="form.sending" />
+      <label>Public Name</label>
+      <md-input name="public-name" id="public-name" v-model="authForm" :disabled="form.sending" />
       <span class="md-error">error</span>
       <span class="md-error" v-if="!$v.form.publicName.required">A name is required</span>
       <span class="md-error" v-else-if="!$v.form.publicName.minlength">At least 3 characters</span>
@@ -46,7 +46,6 @@ export default {
   },
   data: () => ({
     form: {
-      publicName: null,
       sending: false,
       errorMessage: null
     }
@@ -60,6 +59,14 @@ export default {
     }
   },
   computed: {
+    authForm: {
+      get () {
+        return this.$store.state.inputs.authForm
+      },
+      set (value) {
+        this.$store.commit('authForm', value)
+      }
+    },
     isEmpty () {
       const { publicNames } = this.$store.state.data
       return (publicNames && publicNames.length < 1)
@@ -82,10 +89,10 @@ export default {
       this.form.publicName = null
     },
     async createPublicName () {
-      const id = this.form.publicName
-      const dispatch = await this.$store.dispatch('createPublicName', id)
+      console.log('CALLING')
+      const dispatch = await this.$store.dispatch('createPublicName')
       if (dispatch.success) {
-        router.push(id)
+        router.push(this.$store.state.inputs.authForm)
       } else if (dispatch.error) {
         console.log(dispatch.error)
         this.form.errorMessage = dispatch.error

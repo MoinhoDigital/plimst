@@ -4,9 +4,7 @@
       <div class="container">
        <md-card>
           <md-card-header>
-            <appbar>
-                <router-view name="bar"></router-view>
-            </appbar>
+              <router-view name="bar"></router-view>
             <md-card-header-text>
             </md-card-header-text>
           </md-card-header>
@@ -23,13 +21,11 @@
 </template>
 <script>
 import Loader from '@/components/Loader'
-import Appbar from '@/components/Appbar'
 
 export default {
   name: 'main',
   components: {
-    'loader': Loader,
-    'appbar': Appbar
+    'loader': Loader
   }
 }
 </script>

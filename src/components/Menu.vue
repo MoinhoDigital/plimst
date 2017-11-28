@@ -2,25 +2,22 @@
 <template>
   <div class="wrapper">
     <div class="container">
-      <img src="../assets/logo.png" />
-      <slot></slot>
+    	<ul>
+    		<li to=""></li>
+    	</ul>
     </div>
-    <hr />
   </div>
 </template>
 
 <script>
 export default {
-  name: 'Appbar'
+  name: 'Menu'
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
   .wrapper {
-  }
-  .container {
-    display: flex;
-    justify-content: space-around;
+  	background: blue;
   }
 </style>

@@ -7,22 +7,11 @@ import Auth from '@/components/Auth'
 import Dashboard from '@/components/Dashboard'
 import Send from '@/components/Send'
 import CreateAsset from '@/components/CreateAsset'
+import Menu from '@/components/Menu'
+import DefaultBar from '@/components/DefaultBar'
+import WalletBar from '@/components/WalletBar'
 
 Vue.use(Router)
-
-const sendBar = {
-  template: `
-    <div>
-      <md-button class="md-raised md-primary">{{ coins[0].asset }} {{ coins[0].quantity }}</md-button>
-      <md-button class="md-raised md-accent" :to="{ name: 'CreateAsset' }">
-        create asset
-      </md-button>
-    </div>
-  `,
-  props: ['coins']
-}
-
-const defaultBar = { template: '<h2 class="md-title">SAVE TIME | SAFE MONEY</h2>' }
 
 const Action = {
   template: `
@@ -30,6 +19,13 @@ const Action = {
   `,
   props: ['text', 'action']
 }
+
+// const menuButton = {
+//   template: '<img src="../assets/logo.png" @click="action" />'
+// }
+
+const dashBar = { template: '<router-view name="bar" />' }
+const dashAction = { template: '<router-view name="action" />' }
 
 export default new Router({
   routes: [
@@ -46,32 +42,51 @@ export default new Router({
         {
           path: '/auth',
           name: 'Auth',
-          components: { default: Auth, bar: defaultBar, action: Action },
+          components: {
+            default: Auth,
+            bar: DefaultBar,
+            action: Action
+          },
           props: {
             default: true,
-            bar: true,
-            action: { text: 'Create', action: () => store.dispatch('createPublicName') } }
+            bar: { menuAction: () => console.log('Open Menu') },
+            action: { text: 'Create', action: () => store.dispatch('createPublicName') }
+          }
         },
         {
           path: '/:id',
           name: 'Dashboard',
           redirect: '/:id/send',
-          component: Dashboard,
           props: true,
+          components: { default: Dashboard, bar: dashBar, action: dashAction },
           children: [
             {
               path: 'send',
-              components: { default: Send, bar: sendBar, action: Action },
+              components: { default: Send, bar: WalletBar, action: Action },
               props: {
                 default: true,
-                bar: { coins: [{ asset: 'PLIMST', quantity: 0.001 }] },
-                action: { text: 'Send', action: () => store.dispatch('transferAssets') } }
+                bar: { menuAction: () => console.log('Open Menu') },
+                action: { text: 'Send', action: () => store.dispatch('transferAssets') }
+              }
+            },
+            {
+              path: 'menu',
+              components: { default: Menu, bar: DefaultBar, action: Action },
+              props: {
+                default: true,
+                bar: { menuAction: () => console.log('Open Menu') },
+                action: { text: 'Send', action: () => store.dispatch('transferAssets') }
+              }
             },
             {
               name: 'CreateAsset',
               path: 'create',
-              components: { default: CreateAsset, bar: sendBar, action: Action },
-              props: { default: true, bar: true, action: { text: 'Create', action: () => store.dispatch('createAsset') } }
+              components: { default: CreateAsset, bar: DefaultBar, action: Action },
+              props: {
+                default: true,
+                bar: { menuAction: () => console.log('Open Menu') },
+                action: { text: 'Create', action: () => store.dispatch('createAsset') }
+              }
             }
           ]
         }
