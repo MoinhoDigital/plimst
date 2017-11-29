@@ -6,8 +6,12 @@
       You don't seem to have a public id yet. Please create a new one.
     </div>
     <h2 class="md-title" v-if="!isEmpty">Select an ID</h2>
-    <div class="namelist" v-for="name in publicNames">
-      <md-button class="md-raised md-accent" :to="{ name: 'Dashboard', params: { id: name }}">
+    <div class="namelist">
+      <md-button
+        v-for="name in publicNames"
+        :key="name"
+        class="md-raised md-accent non-cap"
+        :to="{ name: 'Dashboard', params: { id: name }}">
         {{ name }}
       </md-button>
     </div>
@@ -17,10 +21,13 @@
     </div>
     <md-field :class="getValidationClass('publicName')">
       <label>Public Name</label>
-      <md-input name="public-name" id="public-name" v-model="authForm" :disabled="form.sending" />
-      <span class="md-error">error</span>
-      <span class="md-error" v-if="!$v.form.publicName.required">A name is required</span>
-      <span class="md-error" v-else-if="!$v.form.publicName.minlength">At least 3 characters</span>
+      <md-input
+        v-model="authForm" 
+        :disabled="authenticating" />
+      <span class="md-error" v-if="error">{{ error }}</span>
+      <span class="md-error" v-else-if="!$v.publicName.required">A name is required</span>
+      <span class="md-error" v-else-if="!$v.publicName.minlength">At least 3 characters</span>
+      <span class="md-error" v-else-if="!$v.publicName.alphaNum">Alphanumeric chars only</span>
     </md-field>
   </div>
 </template>
@@ -29,7 +36,8 @@
 import { validationMixin } from 'vuelidate'
 import {
   required,
-  minLength
+  minLength,
+  alphaNum
 } from 'vuelidate/lib/validators'
 import router from '../router'
 import Loader from './Loader.vue'
@@ -44,18 +52,11 @@ export default {
     const { dispatch } = this.$store
     await dispatch('getPublicNames')
   },
-  data: () => ({
-    form: {
-      sending: false,
-      errorMessage: null
-    }
-  }),
   validations: {
-    form: {
-      publicName: {
-        required,
-        minLength: minLength(3)
-      }
+    publicName: {
+      required,
+      alphaNum,
+      minLength: minLength(3)
     }
   },
   computed: {
@@ -73,12 +74,22 @@ export default {
     },
     publicNames () {
       return this.$store.state.data.publicNames
+    },
+    error () {
+      return this.$store.state.inputs.authError
+    },
+    authenticating () {
+      return this.$store.state.inputs.authenticating
     }
   },
   methods: {
     getValidationClass (fieldName) {
-      const field = this.$v.form[fieldName]
-      if (field) {
+      const field = this.$v[fieldName]
+      if (this.error) {
+        return {
+          'md-invalid': true
+        }
+      } else if (field) {
         return {
           'md-invalid': field.$invalid && field.$dirty
         }
@@ -86,7 +97,7 @@ export default {
     },
     clearForm () {
       this.$v.$reset()
-      this.form.publicName = null
+      this.$store.commit('authForm', null)
     },
     async createPublicName () {
       console.log('CALLING')
@@ -107,6 +118,9 @@ export default {
 <style scoped>
   .namelist {
     padding: 30px 0;
+  }
+  .non-cap {
+    text-transform: none;
   }
   .md-error {
     color: red;

@@ -56,14 +56,44 @@ export default new Vuex.Store({
       inboxData: [],
       walletList: null,
       coins: [],
+      assetIndex: 0,
       wallet: null
     },
     modals: {
     },
     inputs: {
       authForm: 'Satoshi Nakamoto',
+      authenticating: false,
+      authError: null,
       assetForm: { asset: 'BTC', quantity: 3 },
-      transferForm: { receiver: 'Satoshi Nakamoto', quantity: 3 }
+      creatingAsset: false,
+      assetError: null,
+      transferForm: { receiver: 'User Public Name', quantity: 0 },
+      transfering: false,
+      transferError: {
+        hasAmount: false,
+        exists: false
+      }
+    }
+  },
+  getters: {
+    walletData: state => {
+      // Hack to merge coins with same name
+      const walletCoins = state.data.coins
+        .reduce((prev, coin) => {
+          const assetIndex = prev.findIndex(i => i.name === coin.asset)
+          if (assetIndex === -1) {
+            return prev.concat({ name: coin.asset, quantity: 1 })
+          }
+          prev[assetIndex].quantity = prev[assetIndex].quantity + 1
+          return prev
+        }, [])
+      if (walletCoins.length < 1) return [{ name: 'PLIMST', quantity: 0 }]
+      else return walletCoins
+    },
+    currentAsset: (state, getters) => {
+      const index = state.data.assetIndex
+      return getters.walletData[index]
     }
   },
   mutations: {
@@ -81,24 +111,38 @@ export default new Vuex.Store({
     coins: (state, payload) => {
       state.data.coins = payload
     },
+    assetIndex: (state, payload) => {
+      state.data.assetIndex = payload
+    },
     authForm: (state, payload) => {
       state.inputs.authForm = payload
+    },
+    authenticating: (state, payload) => {
+      state.inputs.authenticating = payload
+    },
+    authError: (state, payload) => {
+      state.inputs.authError = payload
     },
     assetForm: (state, payload) => {
       state.inputs.assetForm = payload
     },
+    creatingAsset: (state, payload) => {
+      state.inputs.creatingAsset = payload
+    },
+    assetError: (state, payload) => {
+      state.inputs.assetError = payload
+    },
     transferForm: (state, payload) => {
       state.inputs.assetForm = payload
     },
+    transfering: (state, payload) => {
+      state.inputs.transfering = payload
+    },
+    transferError: (state, payload) => {
+      state.inputs.transferError = payload
+    },
     setWalletList: (state, payload) => {
-      let walletList = []
-      payload.map((item) => {
-        let parsed = JSON.parse(Object.values(item)[0])
-        parsed.id = Object.keys(item)[0]
-        walletList.push(parsed)
-      })
-      // const sortedList = walletList.sort((a, b) => walletList.lastUpdate[a] - walletList.lastUpdate[b])
-      state.data.walletList = walletList
+      state.data.walletList = payload
     },
     setWallet: (state, payload) => {
       state.data.wallet = payload
@@ -127,12 +171,15 @@ export default new Vuex.Store({
     },
     async createPublicName ({ commit, state, dispatch }) {
       const { handles: { appHandle }, inputs: { authForm } } = state
+      commit('authenticating', true)
       const request = await createPublicName(appHandle, authForm)
       if (request.success) {
         await dispatch('getPublicNames')
-        router.push(state.inputs.authForm)
+        await commit('authenticating', false)
+        router.push(authForm)
       } else {
-        return { error: request.error }
+        commit('authError', request.error)
+        commit('authenticating', false)
       }
     },
     async createWallet ({ commit, state }, id) {
@@ -149,7 +196,13 @@ export default new Vuex.Store({
         const serialisedData = JSON.stringify(rawData)
         const saveWallet = await insert(appHandle, idsInfo, { [id]: serialisedData })
         if (saveWallet) {
-          const walletList = await get(appHandle, idsInfo.key, idsInfo.tagType)
+          const rawWalletList = await get(appHandle, idsInfo.key, idsInfo.tagType)
+          let walletList = []
+          await Promise.all(rawWalletList.map((item) => {
+            let parsed = JSON.parse(Object.values(item)[0])
+            parsed.id = Object.keys(item)[0]
+            walletList.push(parsed)
+          }))
           await loadWalletData(appHandle, wallet, walletInfo.key)
           rawData.id = id
           commit('setWallet', rawData)
@@ -159,19 +212,23 @@ export default new Vuex.Store({
         console.log('Error creating wallet: ', err)
       }
     },
+    async setWalletList ({ commit, state }, raw) {
+
+    },
+    async changeAsset ({commit, state}, index) {
+      commit('assetIndex', index)
+    },
     async selectWallet ({commit, state}, id) {
       const { data: { walletList }, handles: { appHandle } } = state
       let receivedCoins = []
       let wallet
       try {
         await Promise.all(walletList
-          .filter((wallet) => {
-            console.log('wallet', wallet.id, id)
-            return wallet.id === id
-          })
+          .filter((wallet) => wallet.id === id)
           .map((selected) => {
             wallet = selected
           }))
+        console.log('Wallet', id, walletList)
         const pk = wallet.id
         inboxInfo.encPk = wallet.pk
         inboxInfo.encSk = wallet.sk
@@ -206,18 +263,30 @@ export default new Vuex.Store({
       }
     },
     async selectId ({ commit, state, dispatch }) {
-      const { handles: { appHandle }, inputs: { authForm } } = state
-      const rawWalletList = await get(appHandle, idsInfo.key, idsInfo.tagType)
-      commit('setWalletList', rawWalletList)
-      const wallet = state.data.walletList.findIndex(wallet => wallet.id === authForm)
-      if (wallet === -1) {
-        await dispatch('createWallet', authForm)
+      try {
+        const { handles: { appHandle }, route: { params: { id } } } = state
+        const rawWalletList = await get(appHandle, idsInfo.key, idsInfo.tagType)
+        let walletList = []
+        await Promise.all(rawWalletList.map((item) => {
+          let parsed = JSON.parse(Object.values(item)[0])
+          parsed.id = Object.keys(item)[0]
+          walletList.push(parsed)
+        }))
+        // const sortedList = walletList.sort((a, b) => walletList.lastUpdate[a] - walletList.lastUpdate[b])
+        await commit('setWalletList', walletList)
+        const wallet = walletList.findIndex(wallet => wallet.id === id)
+        if (wallet === -1) {
+          await dispatch('createWallet', id)
+        }
+        dispatch('selectWallet', id)
+      } catch (err) {
+        console.log('Error on selecting id:', err)
       }
-      dispatch('selectWallet', authForm)
     },
     async createAsset ({ commit, state }) {
       const { handles: { appHandle }, data: { wallet, coins }, inputs: { assetForm: { asset, quantity } } } = state
       let mintedCoins = []
+      commit('creatingAsset', true)
       async function mintCoins (privateKey, amount) {
         if (amount < 1 || privateKey.length < 1) {
           return mintedCoins
@@ -226,62 +295,92 @@ export default new Vuex.Store({
         mintedCoins.push(newCoin)
         return mintCoins(privateKey, amount - 1)
       }
-      console.log(`Minting ${quantity} coins for '${wallet.id}'`)
-      const newCoins = await mintCoins(wallet.id, quantity)
-      const newList = coins.concat(newCoins)
-      console.log('New list ', newList)
-      console.log('Notifying coins transfer to recipient\'s wallet inbox...')
-      await storeCoinsToWallet(appHandle, wallet.serialised, newList, walletInfo.key)
-      const txId = await sendTxNotif(appHandle, wallet.id, newCoins, inboxInfo, asset, 'minted')
-      let newValue = wallet
-      newValue.lastUpdate = new Date().toUTCString()
-      await update(appHandle, idsInfo.key, idsInfo.tagType, wallet.id, newValue)
-      console.log(`Asset coins minted!`, txId)
-      inboxInfo.encPk = wallet.pk
-      inboxInfo.encSk = wallet.sk
-      const inboxData = await readTxInboxData(appHandle, wallet.id, inboxInfo)
-      const updatedCoins = await loadWalletData(appHandle, wallet.serialised, walletInfo.key)
-      await commit('inboxData', inboxData)
-      await commit('coins', updatedCoins)
-      router.push(`/${wallet.id}/send`)
+      try {
+        console.log(`Minting ${quantity} coins for '${wallet.id}'`)
+        const newCoins = await mintCoins(wallet.id, quantity)
+        const newList = coins.concat(newCoins)
+        console.log('New list ', newList)
+        console.log('Notifying coins transfer to recipient\'s wallet inbox...')
+        await storeCoinsToWallet(appHandle, wallet.serialised, newList, walletInfo.key)
+        const txId = await sendTxNotif(appHandle, wallet.id, newCoins, inboxInfo, asset, 'minted')
+        let newValue = wallet
+        newValue.lastUpdate = new Date().toUTCString()
+        await update(appHandle, idsInfo.key, idsInfo.tagType, wallet.id, newValue)
+        console.log(`Asset coins minted!`, txId)
+        inboxInfo.encPk = wallet.pk
+        inboxInfo.encSk = wallet.sk
+        const inboxData = await readTxInboxData(appHandle, wallet.id, inboxInfo)
+        const updatedCoins = await loadWalletData(appHandle, wallet.serialised, walletInfo.key)
+        await commit('inboxData', inboxData)
+        await commit('coins', updatedCoins)
+        router.push(`/${wallet.id}/send`)
+        commit('creatingAsset', false)
+      } catch (err) {
+        commit('assetError', err.toString())
+        commit('creatingAsset', false)
+      }
     },
-    async transferAssets ({ commit, state }, { form, asset }) {
-      const { quantity, receiver } = form
-      const { handles: { appHandle }, data: { wallet, coins } } = state
+    async transferAssets ({ commit, state, getters }) {
+      const { handles: { appHandle }, data: { wallet, coins }, inputs: { transferForm: { quantity, receiver } } } = state
+      const { currentAsset } = getters
+      const asset = currentAsset.name
       let transferedCoinIds = []
-      console.log(`Transfering ${quantity} ${asset}s to ${receiver}`)
-      await Promise.all(coins
-        .filter(coin => coin.asset === asset)
-        .map(async (coin, index) => {
-          const coinInfo = {
-            asset,
-            xorName: coin.xorName,
-            key: assetInfo.key,
-            tagType: assetInfo.tagType
-          }
-          if (index + 1 <= quantity) {
-            const transfer = await transferCoin(appHandle, wallet.id, wallet.sk, coinInfo, receiver)
-            if (transfer) {
-              transferedCoinIds.push(coin.xorName)
-            }
-          }
-        }))
-      const toRemoveMap = transferedCoinIds.reduce((memo, item) => {
-        memo[item] = memo[item] || true
-        return memo
-      }, {})
-      const newValue = await Promise.all(coins.filter(coin => toRemoveMap[coin.xorName]))
-      console.log('New value to store', newValue)
-      await storeCoinsToWallet(appHandle, wallet.serialised, newValue, walletInfo.key)
-      const subsTx = await sendTxNotif(appHandle, wallet.id, transferedCoinIds, inboxInfo, asset, 'sent')
-      wallet.lastUpdate = new Date().toUTCString()
-      await update(appHandle, idsInfo.key, idsInfo.tagType, wallet.id, wallet)
-      const addTx = await sendTxNotif(appHandle, receiver, transferedCoinIds, inboxInfo, asset, 'received')
-      console.log('Transaction TX id:', subsTx, addTx)
-      const inboxData = await readTxInboxData(appHandle, wallet.id, inboxInfo)
-      const updatedCoins = await loadWalletData(appHandle, wallet.serialised, walletInfo.key)
-      commit('inboxData', inboxData)
-      commit('coins', updatedCoins)
+      commit('transfering', true)
+      if (quantity > 0 && quantity <= currentAsset.quantity) {
+        console.log(`Transfering ${quantity} ${asset}s to ${receiver}`)
+        const checkUser = true
+        if (checkUser.error) {
+          commit('transferError', { exists: checkUser.error })
+          commit('transfering', false)
+        } else {
+          await Promise.all(coins
+            .filter(coin => coin.asset === asset)
+            .map(async (coin, index) => {
+              const coinInfo = {
+                asset,
+                xorName: coin.xorName,
+                key: assetInfo.key,
+                tagType: assetInfo.tagType
+              }
+              if (index + 1 <= quantity) {
+                const transfer = await transferCoin(appHandle, wallet.id, wallet.sk, coinInfo, receiver)
+                if (transfer) {
+                  transferedCoinIds.push(coin.xorName)
+                }
+              }
+            })
+          )
+          console.log('transferedCoinIds', transferedCoinIds)
+          console.log('coins', coins)
+          const toRemoveMap = transferedCoinIds.reduce((memo, item) => {
+            console.log('memo', memo)
+            console.log('item', item)
+            console.log('memo[item]', memo[item])
+            memo[item] = memo[item] || true
+            return memo
+          }, {})
+          const newValue = await Promise.all(coins.filter(coin => toRemoveMap[coin.xorName]))
+          console.log('New value to store', newValue)
+          await storeCoinsToWallet(appHandle, wallet.serialised, newValue, walletInfo.key)
+          const subsTx = await sendTxNotif(appHandle, wallet.id, transferedCoinIds, inboxInfo, asset, 'sent')
+          wallet.lastUpdate = new Date().toUTCString()
+          await update(appHandle, idsInfo.key, idsInfo.tagType, wallet.id, wallet)
+          const addTx = await sendTxNotif(appHandle, receiver, transferedCoinIds, inboxInfo, asset, 'received')
+          console.log('Transaction TX id:', subsTx, addTx)
+          const inboxData = await readTxInboxData(appHandle, wallet.id, inboxInfo)
+          const updatedCoins = await loadWalletData(appHandle, wallet.serialised, walletInfo.key)
+          commit('inboxData', inboxData)
+          commit('coins', updatedCoins)
+          commit('transfering', false)
+          commit('transferForm', {
+            receiver: '',
+            quantity: 0
+          })
+        }
+      } else {
+        commit('transferError', { hasAmount: true })
+        commit('transfering', false)
+      }
     }
   }
 })

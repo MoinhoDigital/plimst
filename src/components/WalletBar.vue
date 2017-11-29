@@ -4,9 +4,18 @@
     <div class="container">
       <img src="../assets/logo.png" @click="menuAction" />
       <div>
-        <md-button class="md-raised md-primary">
-          {{ coins[0].name }} {{ coins[0].quantity }}
-        </md-button>
+        <md-menu md-direction="bottom-end">
+          <md-button class="md-raised md-primary" md-menu-trigger>
+            {{ currentCoin.name }} {{ currentCoin.quantity }}
+          </md-button>
+          <md-menu-content>
+            <md-menu-item
+              v-for="(coin, key) in coins" :key="key"
+              @click="changeAsset(key)">
+              {{ coin.name }} <b>{{ coin.quantity }}</b>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
         <md-button class="md-raised md-accent" :to="{ name: 'CreateAsset' }">
           create asset
         </md-button>
@@ -22,17 +31,15 @@ export default {
   props: ['menuAction'],
   computed: {
     coins () {
-      const walletCoins = this.$store.state.data.coins
-        .reduce((prev, coin) => {
-          const assetIndex = prev.findIndex(i => i.name === coin.asset)
-          if (assetIndex === -1) {
-            return prev.concat({ name: coin.asset, quantity: 1 })
-          }
-          prev[assetIndex].quantity = prev[assetIndex].quantity + 1
-          return prev
-        }, [])
-      if (walletCoins.length < 1) return [{ name: 'PLIMST', quantity: 0 }]
-      else return walletCoins
+      return this.$store.getters.walletData
+    },
+    currentCoin () {
+      return this.$store.getters.currentAsset
+    }
+  },
+  methods: {
+    changeAsset (index) {
+      this.$store.dispatch('changeAsset', index)
     }
   }
 }

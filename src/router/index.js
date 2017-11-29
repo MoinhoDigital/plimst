@@ -15,14 +15,15 @@ Vue.use(Router)
 
 const Action = {
   template: `
-    <md-button class="md-raised md-primary full" @click="action">{{ text }}</md-button>
+    <md-button
+      class="md-raised md-primary full"
+      disabled="disabled"
+      @click="action">
+      {{ text }}
+    </md-button>
   `,
   props: ['text', 'action']
 }
-
-// const menuButton = {
-//   template: '<img src="../assets/logo.png" @click="action" />'
-// }
 
 const dashBar = { template: '<router-view name="bar" />' }
 const dashAction = { template: '<router-view name="action" />' }
@@ -50,7 +51,11 @@ export default new Router({
           props: {
             default: true,
             bar: { menuAction: () => console.log('Open Menu') },
-            action: { text: 'Create', action: () => store.dispatch('createPublicName') }
+            action: {
+              text: 'Create',
+              action: () => store.dispatch('createPublicName'),
+              disabled: store.state.inputs.authenticating
+            }
           }
         },
         {
@@ -66,7 +71,11 @@ export default new Router({
               props: {
                 default: true,
                 bar: { menuAction: () => console.log('Open Menu') },
-                action: { text: 'Send', action: () => store.dispatch('transferAssets') }
+                action: {
+                  text: 'Send',
+                  action: () => store.dispatch('transferAssets'),
+                  disabled: store.state.inputs.transfering
+                }
               }
             },
             {
@@ -85,7 +94,11 @@ export default new Router({
               props: {
                 default: true,
                 bar: { menuAction: () => console.log('Open Menu') },
-                action: { text: 'Create', action: () => store.dispatch('createAsset') }
+                action: {
+                  text: 'Create',
+                  action: () => store.dispatch('createAsset'),
+                  disabled: store.state.inputs.creatingAsset
+                }
               }
             }
           ]

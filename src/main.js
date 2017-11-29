@@ -2,11 +2,14 @@
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import 'babel-polyfill'
 import Vue from 'vue'
+import { sync } from 'vuex-router-sync'
 import { MdMenu, MdButton, MdCard, MdField, MdDialog, MdToolbar, MdList } from 'vue-material/dist/components'
 import 'vue-material/dist/vue-material.min.css'
 import router from './router'
 import store from './store'
 import App from './App'
+
+sync(store, router)
 
 Vue.config.productionTip = false
 
