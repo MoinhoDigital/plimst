@@ -19,9 +19,14 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
   .wrapper {
+    background: none;
   }
   .container {
+    background: none;
     display: flex;
     justify-content: space-around;
+  }
+  hr {
+    color: #fff;
   }
 </style>

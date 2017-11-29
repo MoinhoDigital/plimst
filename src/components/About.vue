@@ -3,16 +3,12 @@
   <div class="wrapper" v-if="open">
     <md-card class="container">
       <md-card-header>
-        <defaultbar :menuAction="closeMenu" />
+        <defaultbar :menuAction="closeAbout" />
         <md-card-header-text>
         </md-card-header-text>
       </md-card-header>
       <md-card-content>
-        <ul>
-          <li @click="gotoWallet">send</li>
-          <li @click="openAbout">about</li>
-          <li @click="changeId">change id</li>
-        </ul>
+        ABOUT
       </md-card-content>
     </md-card>
   </div>
@@ -20,34 +16,20 @@
 
 <script>
 import DefaultBar from './DefaultBar'
-import router from '../router'
 
 export default {
-  name: 'Menu',
+  name: 'About',
   components: {
     'defaultbar': DefaultBar
   },
   computed: {
     open () {
-      return this.$store.state.modals.menu
+      return this.$store.state.modals.about
     }
   },
   methods: {
-    closeMenu () {
-      this.$store.commit('toggleMenuModal', false)
-    },
-    openAbout () {
-      const { commit } = this.$store
-      commit('toggleMenuModal', false)
-      commit('toggleAboutModal', true)
-    },
-    changeId () {
-      this.$store.dispatch('resetId')
-    },
-    gotoWallet () {
-      const id = this.$store.state.data.wallet.id
-      router.push({ name: 'Dashboard', params: { id } })
-      this.$store.commit('toggleMenuModal', false)
+    closeAbout () {
+      this.$store.commit('toggleAboutModal', false)
     }
   }
 }
@@ -70,6 +52,5 @@ export default {
     color: #fff;
     text-align: left;
     margin: 0 auto;
-    text-transform: uppercase;
   }
 </style>

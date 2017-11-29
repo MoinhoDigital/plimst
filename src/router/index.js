@@ -7,26 +7,17 @@ import Auth from '@/components/Auth'
 import Dashboard from '@/components/Dashboard'
 import Send from '@/components/Send'
 import CreateAsset from '@/components/CreateAsset'
-import Menu from '@/components/Menu'
 import DefaultBar from '@/components/DefaultBar'
 import WalletBar from '@/components/WalletBar'
+import MainAction from '@/components/MainAction'
 
 Vue.use(Router)
 
-const Action = {
-  template: `
-    <md-button
-      class="md-raised md-primary full"
-      disabled="disabled"
-      @click="action">
-      {{ text }}
-    </md-button>
-  `,
-  props: ['text', 'action']
-}
-
 const dashBar = { template: '<router-view name="bar" />' }
 const dashAction = { template: '<router-view name="action" />' }
+
+const openMenu = () => store.commit('toggleMenuModal', true)
+const openAbout = () => store.commit('toggleAboutModal', true)
 
 export default new Router({
   routes: [
@@ -46,15 +37,15 @@ export default new Router({
           components: {
             default: Auth,
             bar: DefaultBar,
-            action: Action
+            action: MainAction
           },
           props: {
             default: true,
-            bar: { menuAction: () => console.log('Open Menu') },
+            bar: { menuAction: () => openAbout() },
             action: {
               text: 'Create',
               action: () => store.dispatch('createPublicName'),
-              disabled: store.state.inputs.authenticating
+              disabled: 'authenticating'
             }
           }
         },
@@ -67,37 +58,28 @@ export default new Router({
           children: [
             {
               path: 'send',
-              components: { default: Send, bar: WalletBar, action: Action },
+              components: { default: Send, bar: WalletBar, action: MainAction },
               props: {
                 default: true,
-                bar: { menuAction: () => console.log('Open Menu') },
+                bar: { menuAction: () => openMenu() },
                 action: {
                   text: 'Send',
                   action: () => store.dispatch('transferAssets'),
-                  disabled: store.state.inputs.transfering
+                  disabled: 'transfering'
                 }
-              }
-            },
-            {
-              path: 'menu',
-              components: { default: Menu, bar: DefaultBar, action: Action },
-              props: {
-                default: true,
-                bar: { menuAction: () => console.log('Open Menu') },
-                action: { text: 'Send', action: () => store.dispatch('transferAssets') }
               }
             },
             {
               name: 'CreateAsset',
               path: 'create',
-              components: { default: CreateAsset, bar: DefaultBar, action: Action },
+              components: { default: CreateAsset, bar: DefaultBar, action: MainAction },
               props: {
                 default: true,
-                bar: { menuAction: () => console.log('Open Menu') },
+                bar: { menuAction: () => openMenu() },
                 action: {
                   text: 'Create',
                   action: () => store.dispatch('createAsset'),
-                  disabled: store.state.inputs.creatingAsset
+                  disabled: 'creatingAsset'
                 }
               }
             }

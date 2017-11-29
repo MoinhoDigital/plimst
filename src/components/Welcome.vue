@@ -1,6 +1,6 @@
 <!-- PROPERTY OF PLIMST -->
 <template>
-  <div class="wrapper">
+  <div class="welcome">
       <div class="container">
         <!-- <img src="../assets/logo.png"> -->
         <loader class="loader" />
@@ -31,7 +31,17 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.welcome {
+  width: 100%;
+  height: 100%;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 .loader {
+  background: #000;
   width: 35px;
   height: auto;
   margin: auto;

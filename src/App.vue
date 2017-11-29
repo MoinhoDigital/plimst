@@ -1,13 +1,20 @@
 <template>
   <div id="app">
-    <div>
-      <router-view />
-    </div>
+    <router-view />
+    <appMenu />
+    <about />
   </div>
 </template>
 <script>
+import Menu from '@/components/Menu'
+import About from '@/components/About'
+
 export default {
-  name: 'app'
+  name: 'app',
+  components: {
+    'appMenu': Menu,
+    'about': About
+  }
 }
 </script>
 
@@ -28,20 +35,14 @@ body, html {
 }
 #app {
   background: #000;
-  background: url('./assets/background.jpg');
-  background-size: cover;
   width: 100%;
   height: 100%;
   color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
 }
 .wrapper {
-    width: 420px;
-    background: #fff;
-    color: #000;
+  width: 450px;
+  background: #fff;
+  color: #000;
   }
 .full {
   width: 100%;
